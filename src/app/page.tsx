@@ -2,7 +2,7 @@
 
 import { Board } from './components/Board';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiLayout, FiGitBranch, FiBell, FiUser, FiSearch, FiSettings, FiInfo, FiCoffee } from 'react-icons/fi';
+import { FiLayout, FiSearch } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
 import { SearchProvider, useSearch } from './hooks/useSearch';
 
@@ -12,13 +12,13 @@ function SearchInput() {
   
   return (
     <motion.div 
-      className="hidden md:flex items-center relative px-3 py-2 bg-white border-2 border-black rounded-full w-64 transition-all duration-200 group shadow-sm"
+      className="flex items-center relative px-3 py-2 bg-white border-2 border-black rounded-full w-full max-w-[90%] sm:max-w-xs transition-all duration-200 group shadow-sm"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
       whileHover={{ boxShadow: '3px 3px 0 rgba(0,0,0,0.8)' }}
     >
-      <FiSearch className="text-gray-700 group-hover:text-blue-500 mr-2 transition-colors duration-200" size={16} />
+      <FiSearch className="text-gray-700 group-hover:text-blue-500 mr-2 transition-colors duration-200 flex-shrink-0" size={16} />
       <input 
         type="text" 
         value={searchTerm}
@@ -29,7 +29,7 @@ function SearchInput() {
       {searchTerm && (
         <button 
           onClick={() => setSearchTerm('')}
-          className="text-gray-400 hover:text-gray-600"
+          className="text-gray-400 hover:text-gray-600 flex-shrink-0"
         >
           ×
         </button>
@@ -40,7 +40,6 @@ function SearchInput() {
 
 export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
-  const [showInfoTooltip, setShowInfoTooltip] = useState(false);
 
   // Simulate loading and display splash screen
   useEffect(() => {
@@ -102,9 +101,9 @@ export default function Home() {
 
         <main className="min-h-screen flex flex-col">
           
-          <header className="bg-white border-b-4 border-black py-3 px-4 md:px-6 flex justify-between items-center sticky top-0 z-50 shadow-comic">
+          <header className="bg-white border-b-4 border-black py-3 px-4 md:px-6 flex flex-col sm:flex-row items-center sticky top-0 z-50 shadow-comic gap-3 sm:gap-0">
             <motion.div 
-              className="flex items-center"
+              className="flex items-center flex-shrink-0"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, type: 'spring' }}
@@ -139,74 +138,16 @@ export default function Home() {
               </div>
             </motion.div>
             
-            <SearchInput />
+            <div className="flex-grow flex justify-center w-full sm:w-auto sm:mx-4">
+              <SearchInput />
+            </div>
             
             <motion.div 
-              className="flex items-center space-x-3"
+              className="flex items-center flex-shrink-0"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, type: 'spring' }}
             >
-              <motion.button
-                className="flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:text-blue-500 hover:bg-blue-50 relative transition-colors duration-200 border-2 border-black bg-white"
-                whileHover={{ scale: 1.05, rotate: 5 }}
-                whileTap={{ scale: 0.95 }}
-                onHoverStart={() => setShowInfoTooltip(true)}
-                onHoverEnd={() => setShowInfoTooltip(false)}
-              >
-                <FiInfo size={18} />
-                <AnimatePresence>
-                  {showInfoTooltip && (
-                    <motion.div 
-                      className="comic-speech-bubble absolute right-0 top-full mt-2 w-48 text-xs z-50"
-                      initial={{ opacity: 0, scale: 0.8, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <p className="font-bold">Welcome to TaskMatrix!</p>
-                      <p className="mt-1">Drag tasks between columns to update their status. Click a task to see details.</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-              
-              <motion.button
-                className="flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:text-blue-500 hover:bg-blue-50 relative transition-colors duration-200 border-2 border-black bg-white"
-                whileHover={{ scale: 1.05, rotate: 5 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FiBell size={18} />
-                <motion.span 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ 
-                    type: 'spring',
-                    stiffness: 500, 
-                    delay: 1
-                  }}
-                  className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
-                ></motion.span>
-              </motion.button>
-              
-              <motion.button
-                className="flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:text-blue-500 hover:bg-blue-50 relative transition-colors duration-200 border-2 border-black bg-white"
-                whileHover={{ scale: 1.05, rotate: 15 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FiSettings size={18} />
-              </motion.button>
-              
-              <motion.a 
-                href="https://github.com" 
-                target="_blank" 
-                className="hidden md:flex items-center comic-text text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-white border-2 border-black transition-all duration-200 bg-yellow-100 shadow-sm"
-                whileHover={{ scale: 1.03, y: -1, boxShadow: '3px 3px 0 rgba(0,0,0,0.8)' }}
-              >
-                <FiGitBranch className="mr-1" />
-                <span>v1.0</span>
-              </motion.a>
-              
               <motion.div
                 className="h-9 w-9 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white shadow-md cursor-pointer overflow-hidden border-2 border-black relative"
                 whileHover={{ scale: 1.05, rotate: 5, boxShadow: '3px 3px 0 rgba(0,0,0,0.8)' }}

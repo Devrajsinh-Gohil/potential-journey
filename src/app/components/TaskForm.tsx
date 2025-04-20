@@ -5,7 +5,6 @@ import { Task } from '../types';
 import { FiX, FiCalendar, FiFlag, FiAlignLeft, FiTag, FiCheck, FiZap, FiSave, FiUser } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PrioritizationHelper } from './ui/PrioritizationHelper';
 
 interface TaskFormData {
   title: string;
@@ -400,23 +399,6 @@ export function TaskForm({
               </motion.button>
             </div>
           </div>
-          
-          <AnimatePresence>
-            {showHelper && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden mb-5"
-              >
-                <PrioritizationHelper 
-                  title={title}
-                  dueDate={dueDate || new Date().toISOString().slice(0, 10)}
-                  onSuggestPriority={handleSuggestedPriority}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           <div className="flex justify-end gap-3">
             <motion.button

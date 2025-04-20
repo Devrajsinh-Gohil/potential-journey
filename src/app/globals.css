@@ -243,31 +243,108 @@ body {
 
 .comic-speech-bubble {
   position: relative;
-  background: white;
-  border-radius: 0.8em;
+  background-color: white;
   border: 3px solid black;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 12px 15px;
   font-family: 'Comic Neue', cursive;
-  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2));
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
   transform-origin: center bottom;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.comic-speech-bubble::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-right: 3px solid black;
+  border-bottom: 3px solid black;
+  bottom: -8px;
+  left: 25px;
+  transform: rotate(45deg);
+  z-index: -1;
+}
+
+.comic-speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 20px;
+  width: 30px;
+  height: 15px;
+  background-color: white;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  z-index: -2;
 }
 
 .comic-speech-bubble:hover {
-  transform: scale(1.03);
+  transform: scale(1.02);
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.4);
 }
 
-.comic-speech-bubble:after {
+/* Style for search bubble specifically */
+.search-bubble {
+  background-color: #fff9e6;
+  border-width: 3px;
+  border-style: solid;
+  border-color: black;
+  transform: rotate(-1deg);
+}
+
+.search-bubble::before {
+  background-color: #fff9e6;
+}
+
+/* Style for filter bubbles */
+.filter-bubble {
+  transform: rotate(1deg);
+  margin-bottom: 8px;
+}
+
+/* Comic thought bubble styling - consolidated */
+.comic-thought-bubble {
+  position: relative;
+  background: white;
+  border: 3px solid black;
+  border-radius: 30px;
+  padding: 15px;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.comic-thought-bubble::before {
   content: '';
   position: absolute;
-  bottom: -20px;
-  right: 20%;
-  width: 20px;
-  height: 20px;
-  border: 6px solid black;
-  border-radius: 50% 0;
-  border-color: transparent transparent transparent black;
-  transform: rotate(45deg);
+  bottom: -18px;
+  right: 25%;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border: 3px solid black;
+  border-radius: 50%;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+}
+
+.comic-thought-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  right: 30%;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border: 3px solid black;
+  border-radius: 50%;
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+}
+
+.comic-thought-bubble:hover {
+  transform: scale(1.03);
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.4);
 }
 
 .comic-button {
@@ -371,45 +448,6 @@ body {
 .border-thick {
   border-width: 4px;
   border-color: black;
-}
-
-.comic-thought-bubble {
-  position: relative;
-  background: white;
-  border-radius: 50%;
-  border: 3px solid black;
-  padding: 15px;
-  font-family: 'Comic Neue', cursive;
-  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2));
-  transition: transform 0.3s ease;
-}
-
-.comic-thought-bubble:hover {
-  transform: scale(1.05);
-}
-
-.comic-thought-bubble:before {
-  content: '';
-  position: absolute;
-  bottom: -25px;
-  right: 25%;
-  width: 15px;
-  height: 15px;
-  background: white;
-  border: 3px solid black;
-  border-radius: 50%;
-}
-
-.comic-thought-bubble:after {
-  content: '';
-  position: absolute;
-  bottom: -40px;
-  right: 30%;
-  width: 10px;
-  height: 10px;
-  background: white;
-  border: 3px solid black;
-  border-radius: 50%;
 }
 
 /* Starburst effect for action items */
@@ -673,11 +711,12 @@ body {
 }
 
 .column-container {
-  flex: 1 0 auto;
-  max-height: none;
-  height: auto;
   display: flex;
   flex-direction: column;
+  height: fit-content !important;
+  min-height: auto;
+  align-items: stretch;
+  align-self: flex-start;
 }
 
 /* Add comic book styles */
@@ -690,35 +729,6 @@ body {
     -1px 1px 0 #000,
     1px 1px 0 #000;
   paint-order: stroke fill;
-}
-
-.comic-speech-bubble {
-  position: relative;
-  border-radius: 12px;
-}
-
-.comic-speech-bubble:before {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background-color: inherit;
-  border-right: 3px solid black;
-  border-bottom: 3px solid black;
-  bottom: -10px;
-  left: 30px;
-  transform: rotate(45deg);
-  z-index: -1;
-}
-
-/* Enhance existing comic elements */
-.comic-font {
-  font-family: 'Bangers', cursive;
-  letter-spacing: 1px;
-}
-
-.comic-text {
-  font-family: 'Comic Sans MS', 'Comic Neue', cursive;
 }
 
 .comic-button {
@@ -821,61 +831,6 @@ body {
     z-index: 0;
   }
   
-  .comic-speech-bubble {
-    position: relative;
-    background: white;
-    border: 3px solid black;
-    border-radius: 30px;
-    padding: 15px;
-    box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
-  }
-  
-  .comic-speech-bubble::after {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    left: 30px;
-    width: 30px;
-    height: 15px;
-    background: white;
-    border-right: 3px solid black;
-    border-bottom: 3px solid black;
-    transform: skew(20deg);
-  }
-  
-  .comic-thought-bubble {
-    position: relative;
-    background: white;
-    border: 3px solid black;
-    border-radius: 50%;
-    padding: 15px;
-    box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
-  }
-  
-  .comic-thought-bubble::before {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    right: 30px;
-    width: 20px;
-    height: 20px;
-    background: white;
-    border: 3px solid black;
-    border-radius: 50%;
-  }
-  
-  .comic-thought-bubble::after {
-    content: '';
-    position: absolute;
-    bottom: -20px;
-    right: 15px;
-    width: 10px;
-    height: 10px;
-    background: white;
-    border: 3px solid black;
-    border-radius: 50%;
-  }
-  
   /* Action/Sound Effects */
   .comic-effect {
     font-family: "Bangers", "Comic Sans MS", "Comic Neue", cursive;
@@ -929,3 +884,72 @@ body {
     );
   }
 }
+
+/* Comic Book Paper Textures */
+.comic-paper-yellow {
+  background-color: #fff8dc;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.08' fill-rule='evenodd'%3E%3Ccircle cx='12' cy='12' r='1.5'/%3E%3Ccircle cx='24' cy='24' r='1.5'/%3E%3Ccircle cx='36' cy='36' r='1.5'/%3E%3Ccircle cx='48' cy='48' r='1.5'/%3E%3Ccircle cx='60' cy='60' r='1.5'/%3E%3Ccircle cx='72' cy='72' r='1.5'/%3E%3Ccircle cx='84' cy='84' r='1.5'/%3E%3Ccircle cx='12' cy='36' r='1.5'/%3E%3Ccircle cx='24' cy='48' r='1.5'/%3E%3Ccircle cx='36' cy='60' r='1.5'/%3E%3Ccircle cx='48' cy='72' r='1.5'/%3E%3Ccircle cx='60' cy='84' r='1.5'/%3E%3Ccircle cx='36' cy='12' r='1.5'/%3E%3Ccircle cx='48' cy='24' r='1.5'/%3E%3Ccircle cx='60' cy='36' r='1.5'/%3E%3Ccircle cx='72' cy='48' r='1.5'/%3E%3Ccircle cx='84' cy='60' r='1.5'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 100px 100px;
+  background-blend-mode: multiply;
+  position: relative;
+}
+
+.comic-paper-yellow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(45deg, rgba(255, 246, 178, 0.3) 25%, transparent 25%, transparent 50%, rgba(255, 246, 178, 0.3) 50%, rgba(255, 246, 178, 0.3) 75%, transparent 75%, transparent);
+  background-size: 200px 200px;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+.comic-paper-aged {
+  background-color: #f5f0e0;
+  background-image: 
+    radial-gradient(#d2be9b 1px, transparent 1px),
+    radial-gradient(#d2be9b 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+  position: relative;
+}
+
+.comic-paper-aged::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23a39274' fill-opacity='0.1' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.comic-paper-newsprint {
+  background-color: #f4f1e9;
+  background-image: 
+    linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+    linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+  position: relative;
+}
+
+.comic-paper-newsprint::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23a39274' fill-opacity='0.1' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+}
+

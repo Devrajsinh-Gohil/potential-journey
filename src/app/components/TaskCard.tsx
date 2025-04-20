@@ -5,7 +5,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Task } from '../types';
 import { format, isPast, isToday } from 'date-fns';
-import { FiEdit, FiTrash, FiCalendar, FiFlag, FiMoreVertical, FiChevronDown, FiChevronUp, FiClock, FiZap, FiUser } from 'react-icons/fi';
+import { FiEdit, FiTrash, FiCalendar, FiFlag, FiMoreVertical, FiChevronDown, FiChevronUp, FiClock, FiZap, FiUser, FiCheckCircle } from 'react-icons/fi';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MotionCard, MotionBadge } from './ui/MotionCard';
 
@@ -343,6 +343,59 @@ export function TaskCard({ task, onEdit, onDelete, index = 0 }: TaskCardProps) {
         }}
       />
 
+      {/* Green checkmark for completed tasks */}
+      {localTask.status === 'done' && (
+        <motion.div 
+          className="absolute top-2 right-2 z-20 bg-green-500 text-white rounded-full border-2 border-black flex items-center justify-center p-1"
+          initial={{ scale: 0, rotate: -45 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+          whileHover={{ scale: 1.2, rotate: 5 }}
+        >
+          <FiCheckCircle size={15} />
+          
+          {/* Celebration rays around the checkmark */}
+          <div className="absolute inset-0 -z-10">
+            <svg width="100%" height="100%" viewBox="0 0 40 40" className="absolute top-0 left-0">
+              <motion.g 
+                animate={{ 
+                  rotate: 360,
+                  scale: [1, 1.1, 1]
+                }} 
+                transition={{ 
+                  rotate: { repeat: Infinity, duration: 8, ease: "linear" },
+                  scale: { repeat: Infinity, duration: 2, ease: "easeInOut" }
+                }}
+                style={{ transformOrigin: "center" }}
+              >
+                {/* Generate celebration rays */}
+                {[...Array(8)].map((_, i) => (
+                  <motion.path
+                    key={i}
+                    d={`M20,20 L20,${8 + (i % 3 * 2)}`}
+                    stroke="#facc15"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    transform={`rotate(${i * 45} 20 20)`}
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ 
+                      pathLength: 1, 
+                      opacity: [0, 1, 0],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      delay: i * 0.1,
+                      repeat: Infinity,
+                      repeatDelay: 3
+                    }}
+                  />
+                ))}
+              </motion.g>
+            </svg>
+          </div>
+        </motion.div>
+      )}
+
       {/* POW effect on click */}
       <AnimatePresence>
         {showPow && (
@@ -446,7 +499,11 @@ export function TaskCard({ task, onEdit, onDelete, index = 0 }: TaskCardProps) {
           </AnimatePresence>
         </div>
         
-        <h3 className={`text-base font-bold mb-1 comic-text uppercase ${localTask.priority === 'high' ? 'text-red-800' : ''}`} style={{
+        <h3 className={`text-base font-bold mb-1 comic-text uppercase ${
+          localTask.priority === 'high' ? 'text-red-800' : 
+          localTask.status === 'done' ? 'text-gray-600' : ''
+        } ${localTask.status === 'done' ? 'line-through decoration-2 decoration-green-500' : ''}`} 
+        style={{
           textShadow: localTask.priority === 'high' ? '1px 1px 0 rgba(239, 68, 68, 0.3)' : 'none'
         }}>
           {localTask.title}

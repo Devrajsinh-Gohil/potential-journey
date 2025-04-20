@@ -27,6 +27,7 @@ import { FiPlus, FiFilter, FiChevronDown, FiChevronRight, FiChevronLeft, FiColum
 import { motion, AnimatePresence } from 'framer-motion';
 import { TaskCard } from './TaskCard';
 import { useToast } from './ui/Toast';
+import { TaskAnalytics } from './TaskAnalytics';
 
 const dropAnimationConfig = {
   sideEffects: defaultDropAnimationSideEffects({
@@ -298,12 +299,13 @@ export function Board() {
     <>
       <div className="relative p-4 flex flex-col board-container">
         <motion.div 
-          className="relative z-10 flex justify-between items-center mb-6"
+          className="relative z-10 flex mb-6 w-full"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         >
-          <div className="relative">
+          {/* Left side: Title */}
+          <div className="flex-grow relative">
             {/* POW! effect behind title */}
             <motion.div 
               className="absolute -top-4 -left-8 text-7xl font-bold text-yellow-500 opacity-70 comic-font transform -rotate-12 z-0"
@@ -374,7 +376,8 @@ export function Board() {
             </motion.div>
           </div>
           
-          <div className="flex space-x-2 relative">
+          {/* Right side: Buttons */}
+          <div className="flex items-center gap-3 relative">
             <motion.button
               onClick={() => setIsColumnFormOpen(true)}
               className="comic-button px-4 py-2 flex items-center space-x-1 text-sm bg-purple-400 border-3 border-black transform rotate-1"
@@ -515,15 +518,14 @@ export function Board() {
               {/* Show active filters */}
               {(priorityFilter !== 'all' || assigneeFilter !== 'all' || searchTerm.trim() !== '') && (
                 <motion.div 
-                  className="flex flex-wrap items-center gap-2 mb-5 px-4 py-2 mx-2 bg-white border-3 border-black rounded-md comic-speech-bubble"
+                  className="flex flex-wrap items-center gap-2 mb-5 px-4 py-2 mx-2 bg-white border-3 border-black rounded-md comic-speech-bubble search-bubble"
                   initial={{ y: -10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  style={{ boxShadow: '3px 3px 0 rgba(0,0,0,0.2)' }}
                 >
                   <span className="text-sm font-bold text-gray-800 comic-text uppercase">Active filters:</span>
                   
                   {priorityFilter !== 'all' && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 border-2 border-black rounded text-xs comic-text transform -rotate-1">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 border-2 border-black rounded text-xs comic-text transform -rotate-1 filter-bubble">
                       <span className="font-bold">Priority:</span> 
                       <span className="flex items-center">
                         {priorityFilter === 'high' && <span className="w-2 h-2 bg-red-500 rounded-full mr-1 border border-black"></span>}
@@ -541,7 +543,7 @@ export function Board() {
                   )}
                   
                   {assigneeFilter !== 'all' && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-green-100 border-2 border-black rounded text-xs comic-text transform rotate-1">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-green-100 border-2 border-black rounded text-xs comic-text transform rotate-1 filter-bubble">
                       <span className="font-bold">Assignee:</span> {assigneeFilter}
                       <button 
                         onClick={() => setAssigneeFilter('all')}
@@ -553,7 +555,7 @@ export function Board() {
                   )}
                   
                   {searchTerm.trim() !== '' && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 border-2 border-black rounded text-xs comic-text transform -rotate-1">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 border-2 border-black rounded text-xs comic-text transform -rotate-1 filter-bubble">
                       <FiSearch size={10} className="mr-1" />
                       <span className="font-bold">Search:</span> {searchTerm}
                       <button 
@@ -575,6 +577,11 @@ export function Board() {
                 </motion.div>
               )}
               
+              {/* Mobile Analytics - Shown above columns on smaller screens */}
+              <div className="lg:hidden mb-6">
+                <TaskAnalytics board={board} />
+              </div>
+              
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -584,7 +591,7 @@ export function Board() {
               >
                 <div className="h-full flex justify-center pb-4">
                   <SortableContext items={Object.values(board.columns).map(col => col.id)} strategy={horizontalListSortingStrategy}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 w-full max-w-[1400px] mx-auto p-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-8 w-full max-w-[1400px] mx-auto p-2 auto-rows-auto grid-flow-row items-start align-start">
                       {board.columnOrder.map(columnId => {
                         const column = board.columns[columnId];
                         return (
@@ -636,6 +643,11 @@ export function Board() {
                   ) : null}
                 </DragOverlay>
               </DndContext>
+            </div>
+
+            {/* Analytics Sidebar */}
+            <div className="hidden lg:block w-80 pr-4">
+              <TaskAnalytics board={board} />
             </div>
           </div>
         </div>
@@ -767,6 +779,107 @@ export function Board() {
               setIsTaskFormOpen(false);
             }}
           />
+        )}
+      </AnimatePresence>
+      
+      {/* Delete Column Confirmation Modal */}
+      <AnimatePresence>
+        {isDeleteColumnConfirmOpen && deletingColumnId && (
+          <motion.div 
+            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsDeleteColumnConfirmOpen(false)}
+          >
+            <motion.div 
+              className="bg-white rounded-lg border-4 border-black hand-drawn-border w-full max-w-md shadow-comic relative transform rotate-1"
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ boxShadow: '8px 8px 0 rgba(0,0,0,0.3)' }}
+            >
+              {/* BOOM! effect */}
+              <motion.div 
+                className="absolute -top-20 -right-10 text-6xl font-bold text-red-500 comic-font transform rotate-12 z-10"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <span className="text-stroke-black">BOOM!</span>
+              </motion.div>
+            
+              <div className="flex justify-between items-center p-5 border-b-4 border-black bg-gradient-to-r from-red-500 to-orange-500 text-white comic-font">
+                <h2 className="text-xl uppercase tracking-wide">
+                  Delete Column
+                </h2>
+                <motion.button
+                  onClick={() => setIsDeleteColumnConfirmOpen(false)}
+                  className="bg-white text-gray-800 hover:bg-red-100 hover:text-red-500 transition-colors p-1 rounded-full border-3 border-black"
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <FiX size={20} />
+                </motion.button>
+              </div>
+              
+              <div className="p-5">
+                <div className="mb-5 comic-text">
+                  <p className="text-lg font-bold mb-2">Are you sure you want to delete this column?</p>
+                  <p className="text-gray-700">All tasks in this column will be lost unless you move them to another column.</p>
+                  
+                  {Object.values(board.columns[deletingColumnId]?.taskIds || {}).length > 0 && (
+                    <div className="mt-4">
+                      <p className="font-bold mb-2">Move tasks to:</p>
+                      <select
+                        className="w-full px-3 py-2 border-3 border-black rounded-md shadow-comic-sm comic-text"
+                        value={targetColumnId}
+                        onChange={(e) => setTargetColumnId(e.target.value)}
+                      >
+                        <option value="">None (delete tasks)</option>
+                        {Object.values(board.columns)
+                          .filter(col => col.id !== deletingColumnId)
+                          .map(col => (
+                            <option key={col.id} value={col.id}>{col.title}</option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex justify-end gap-3">
+                  <motion.button
+                    type="button"
+                    onClick={() => setIsDeleteColumnConfirmOpen(false)}
+                    className="px-4 py-2 border-3 border-black bg-white hover:bg-gray-100 rounded-md shadow-comic-sm comic-font transform -rotate-1"
+                    whileHover={{ scale: 1.03, rotate: 1, boxShadow: '4px 4px 0 rgba(0,0,0,0.3)' }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    CANCEL
+                  </motion.button>
+                  
+                  <motion.button
+                    type="button"
+                    onClick={() => {
+                      handleDeleteColumn(deletingColumnId, targetColumnId || undefined);
+                      setIsDeleteColumnConfirmOpen(false);
+                      setDeletingColumnId(null);
+                      setTargetColumnId('');
+                    }}
+                    className="px-4 py-2 border-3 border-black bg-red-500 text-white hover:bg-red-600 rounded-md shadow-comic comic-font transform rotate-1"
+                    whileHover={{ scale: 1.03, rotate: -1, boxShadow: '4px 4px 0 rgba(0,0,0,0.3)' }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    DELETE COLUMN
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>
