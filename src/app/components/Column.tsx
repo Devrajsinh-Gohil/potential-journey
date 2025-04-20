@@ -137,7 +137,7 @@ export function Column({
         filter: isDragging ? 'none' : 'drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.15))'
       }}
       {...attributes}
-      className={`min-w-[280px] max-w-[350px] flex flex-col px-1 pt-2 pb-2 transform column-container ${
+      className={`min-w-[280px] max-w-[350px] h-auto flex flex-col px-1 pt-2 pb-2 transform column-container ${
         id === 'todo' ? 'rotate-1' : id === 'in-progress' ? '-rotate-1' : 'rotate-1'
       } ${
         isDragging ? 'opacity-50' : ''
@@ -147,9 +147,9 @@ export function Column({
       animate="visible"
     >
       <motion.div 
-        className={`flex flex-col rounded-lg border-3 border-black ${getColumnBackground()} overflow-hidden shadow-comic`}
+        className={`flex flex-col rounded-lg border-3 border-black ${getColumnBackground()} overflow-hidden shadow-comic h-full`}
         style={{
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.03' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1.5'/%3E%3Ccircle cx='13' cy='13' r='1.5'/%3E%3C/g%3E%3C/svg%3E\")"
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1.5'/%3E%3Ccircle cx='13' cy='13' r='1.5'/%3E%3C/g%3E%3C/svg%3E\")"
         }}
       >
         <div 
@@ -158,6 +158,7 @@ export function Column({
         >
           <motion.div 
             className={`bg-gradient-to-r ${getHeaderStyles()} comic-font uppercase font-semibold text-lg text-white py-3 px-4 flex items-center justify-between`}
+            style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.3)' }}
           >
             <div className="flex items-center">
               <motion.span 
@@ -174,18 +175,19 @@ export function Column({
               >
                 {getColumnIcon()}
               </motion.span>
-              {title}
+              <span className="tracking-wider">{title}</span>
             </div>
             
             <div className="flex items-center space-x-1">
               <motion.div 
-                className="flex items-center justify-center bg-white rounded-full w-7 h-7 font-bold text-base"
+                className="flex items-center justify-center bg-white rounded-full w-7 h-7 font-bold text-base border-2 border-black"
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
                 style={{ 
                   color: id === 'todo' ? '#3b82f6' : 
                         id === 'in-progress' ? '#f59e0b' : 
-                        id === 'done' ? '#10b981' : '#6b7280'
+                        id === 'done' ? '#10b981' : '#6b7280',
+                  boxShadow: '2px 2px 0 rgba(0,0,0,0.2)'
                 }}
               >
                 {tasks.length}
@@ -242,7 +244,7 @@ export function Column({
                   }}
                 >
                   <div className="text-3xl mb-2">🤔</div>
-                  <div>No tasks yet</div>
+                  <div className="font-bold">No tasks yet</div>
                   <div className="text-xs mt-1">Drop tasks here or add a new one</div>
                 </motion.div>
               </motion.div>
@@ -251,12 +253,14 @@ export function Column({
 
           <motion.button
             onClick={onAddTask}
-            className={`comic-button mt-3 w-full flex items-center justify-center py-2 px-3 ${
+            className={`comic-button mt-3 w-full flex items-center justify-center py-2 px-3 border-2 border-black ${
               id === 'todo' ? 'bg-blue-400' : 
               id === 'in-progress' ? 'bg-yellow-400' : 
               id === 'done' ? 'bg-green-400' : 'bg-gray-400'
-            } text-white`}
-            whileTap={{ scale: 0.95, y: 2 }}
+            } text-white font-bold uppercase`}
+            whileHover={{ scale: 1.03, y: -2, boxShadow: '4px 4px 0 rgba(0,0,0,0.3)' }}
+            whileTap={{ scale: 0.97, y: 1, boxShadow: '2px 2px 0 rgba(0,0,0,0.2)' }}
+            style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.3)' }}
           >
             <motion.div
               initial={{ rotate: 0 }}

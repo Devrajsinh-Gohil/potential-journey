@@ -190,7 +190,7 @@ export function TaskForm({
       >
         {/* Comic-style pattern overlay */}
         <div 
-          className="absolute inset-0 pointer-events-none opacity-5" 
+          className="absolute inset-0 pointer-events-none opacity-10" 
           style={{
             backgroundImage: `radial-gradient(#000 1px, transparent 1px)`,
             backgroundSize: '12px 12px'

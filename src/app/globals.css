@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@tailwind utilities;
 
 /* Comic Book Theme - Enhanced */
 
@@ -648,25 +649,283 @@ body {
 
 /* Remove any hard-coded overflow properties that might affect dynamic resizing */
 .app-container, .board-container, .column-container {
-  height: 100%;
-  width: 100%;
-}
-
-/* Add the following to ensure proper scrolling with independent columns */
-body {
-  overflow-y: auto;
-}
-
-/* Make the main container take up full space but allow proper scrolling */
-.board-container {
-  min-height: 100%;
   height: auto;
-  width: 100%;
-  position: relative;
-  overscroll-behavior: contain;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Make the columns take up equal width without affecting their height */
+body {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.board-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  justify-content: center;
+  align-items: flex-start;
+  height: 100%;
+  min-height: 80vh;
+}
+
 .column-container {
   flex: 1 0 auto;
+  max-height: none;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Add comic book styles */
+.text-stroke-black {
+  -webkit-text-stroke: 2px black;
+  text-shadow: 
+    3px 3px 0 rgba(0, 0, 0, 0.8),
+    -1px -1px 0 #000,  
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+  paint-order: stroke fill;
+}
+
+.comic-speech-bubble {
+  position: relative;
+  border-radius: 12px;
+}
+
+.comic-speech-bubble:before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: inherit;
+  border-right: 3px solid black;
+  border-bottom: 3px solid black;
+  bottom: -10px;
+  left: 30px;
+  transform: rotate(45deg);
+  z-index: -1;
+}
+
+/* Enhance existing comic elements */
+.comic-font {
+  font-family: 'Bangers', cursive;
+  letter-spacing: 1px;
+}
+
+.comic-text {
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive;
+}
+
+.comic-button {
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.comic-button:hover {
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.4);
+}
+
+.comic-button:active {
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.border-3 {
+  border-width: 3px;
+}
+
+.border-4 {
+  border-width: 4px;
+}
+
+.hand-drawn-border {
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+}
+
+.shadow-comic {
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.3);
+}
+
+.shadow-comic-sm {
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
+}
+
+
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background-color: rgb(var(--background-rgb));
+  background-image: 
+    radial-gradient(#e5e7eb 1px, transparent 1px),
+    radial-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+}
+
+@layer components {
+  .shadow-comic {
+    box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+  }
+  
+  .shadow-comic-sm {
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
+  }
+  
+  .shadow-comic-lg {
+    box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.3);
+  }
+  
+  .border-comic {
+    border: 2px solid black;
+  }
+  
+  .comic-text {
+    font-family: "Bangers", "Comic Sans MS", "Comic Neue", cursive;
+    letter-spacing: 0.05em;
+  }
+  
+  .text-stroke-black {
+    -webkit-text-stroke: 1px black;
+    text-stroke: 1px black;
+  }
+  
+  /* Enhanced Comic Book Styling */
+  .comic-panel {
+    border: 3px solid black;
+    position: relative;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
+    background-color: white;
+    overflow: hidden;
+  }
+  
+  .comic-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30%;
+    height: 30%;
+    background-image: radial-gradient(#000 1.5px, transparent 1.5px);
+    background-size: 8px 8px;
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .comic-speech-bubble {
+    position: relative;
+    background: white;
+    border: 3px solid black;
+    border-radius: 30px;
+    padding: 15px;
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+  }
+  
+  .comic-speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 30px;
+    width: 30px;
+    height: 15px;
+    background: white;
+    border-right: 3px solid black;
+    border-bottom: 3px solid black;
+    transform: skew(20deg);
+  }
+  
+  .comic-thought-bubble {
+    position: relative;
+    background: white;
+    border: 3px solid black;
+    border-radius: 50%;
+    padding: 15px;
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+  }
+  
+  .comic-thought-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    right: 30px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border: 3px solid black;
+    border-radius: 50%;
+  }
+  
+  .comic-thought-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    right: 15px;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border: 3px solid black;
+    border-radius: 50%;
+  }
+  
+  /* Action/Sound Effects */
+  .comic-effect {
+    font-family: "Bangers", "Comic Sans MS", "Comic Neue", cursive;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+    transform: rotate(-5deg);
+    display: inline-block;
+  }
+  
+  .comic-effect-pow {
+    color: #ef4444;
+    font-size: 2.5rem;
+    transform: rotate(-8deg) skew(-5deg, -5deg);
+    -webkit-text-stroke: 1px black;
+  }
+  
+  .comic-effect-zap {
+    color: #f59e0b;
+    font-size: 2.5rem;
+    transform: rotate(8deg) skew(5deg, 5deg);
+    -webkit-text-stroke: 1px black;
+  }
+  
+  .comic-effect-boom {
+    color: #8b5cf6;
+    font-size: 3rem;
+    transform: rotate(-3deg) scale(1.2);
+    -webkit-text-stroke: 1px black;
+  }
+  
+  /* Action Lines */
+  .comic-action-lines {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+  }
+  
+  .comic-action-lines.top-right {
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background-image: repeating-linear-gradient(
+      135deg,
+      transparent,
+      transparent 5px,
+      rgba(0,0,0,0.1) 5px,
+      rgba(0,0,0,0.1) 10px
+    );
+  }
 }

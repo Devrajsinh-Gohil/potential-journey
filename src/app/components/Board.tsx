@@ -20,14 +20,13 @@ import {
 } from '@dnd-kit/sortable';
 import { Task } from '../types';
 import { useBoard } from '../hooks/useBoard';
+import { useSearch } from '../hooks/useSearch';
 import { Column } from './Column';
 import { TaskForm } from './TaskForm';
-import { FiPlus, FiFilter, FiChevronDown, FiHelpCircle, FiChevronRight, FiChevronLeft, FiColumns, FiX } from 'react-icons/fi';
+import { FiPlus, FiFilter, FiChevronDown, FiChevronRight, FiChevronLeft, FiColumns, FiX, FiSearch } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TaskCard } from './TaskCard';
 import { useToast } from './ui/Toast';
-import { KeyboardShortcuts } from './ui/KeyboardShortcuts';
-import { KeyboardShortcutsHelp } from './ui/KeyboardShortcutsHelp';
 
 const dropAnimationConfig = {
   sideEffects: defaultDropAnimationSideEffects({
@@ -41,18 +40,64 @@ const dropAnimationConfig = {
 
 export function Board() {
   const { board, addTask, updateTask, deleteTask, moveTask, addColumn, deleteColumn, isLoading } = useBoard();
+  const { searchTerm, setSearchTerm } = useSearch();
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [initialStatus, setInitialStatus] = useState<Task['status']>('todo');
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [activeDraggedTask, setActiveDraggedTask] = useState<Task | null>(null);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isColumnFormOpen, setIsColumnFormOpen] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [isDeleteColumnConfirmOpen, setIsDeleteColumnConfirmOpen] = useState(false);
   const [deletingColumnId, setDeletingColumnId] = useState<string | null>(null);
   const [targetColumnId, setTargetColumnId] = useState<string>('');
   const { showToast } = useToast();
+  const [priorityFilter, setPriorityFilter] = useState<Task['priority'] | 'all'>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState<string | 'all'>('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const uniqueAssignees = Object.values(board?.tasks || {}).reduce<string[]>((acc, task) => {
+    if (task.assignee && !acc.includes(task.assignee)) {
+      acc.push(task.assignee);
+    }
+    return acc;
+  }, []);
+
+  const getFilteredTasks = (columnId: string) => {
+    const column = board?.columns[columnId];
+    if (!column || !column.taskIds) return [];
+    
+    return column.taskIds.filter(taskId => {
+      const task = board?.tasks[taskId];
+      if (!task) return false;
+      
+      // Apply priority filter
+      if (priorityFilter !== 'all' && task.priority !== priorityFilter) {
+        return false;
+      }
+      
+      // Apply assignee filter
+      if (assigneeFilter !== 'all') {
+        if (!task.assignee || task.assignee !== assigneeFilter) {
+          return false;
+        }
+      }
+      
+      // Apply search filter if search term exists
+      if (searchTerm.trim() !== '') {
+        const searchLower = searchTerm.toLowerCase();
+        const titleMatch = task.title.toLowerCase().includes(searchLower);
+        const descriptionMatch = task.description.toLowerCase().includes(searchLower);
+        const assigneeMatch = task.assignee ? task.assignee.toLowerCase().includes(searchLower) : false;
+        
+        if (!titleMatch && !descriptionMatch && !assigneeMatch) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -77,8 +122,6 @@ export function Board() {
     const taskId = event.active.id as string;
     setActiveTaskId(taskId);
 
-    // Find the task that's being dragged and store it 
-    // to use in the DragOverlay
     if (board.tasks[taskId]) {
       setActiveDraggedTask(board.tasks[taskId]);
     }
@@ -92,10 +135,8 @@ export function Board() {
     const activeTaskId = active.id as string;
     const overTaskId = over.id as string;
     
-    // Don't do anything if hovering over the same item
     if (activeTaskId === overTaskId) return;
     
-    // Find the columns for the active and over items
     const activeColumn = Object.values(board.columns).find(column => 
       column.taskIds.includes(activeTaskId)
     );
@@ -106,9 +147,7 @@ export function Board() {
     
     if (!activeColumn || !overColumn) return;
     
-    // If dropping over a column directly (not a task)
     if (overTaskId === overColumn.id) {
-      // Move to the end of the column
       if (activeColumn.id !== overColumn.id) {
         const activeIndex = activeColumn.taskIds.indexOf(activeTaskId);
         
@@ -134,7 +173,6 @@ export function Board() {
     const activeTaskId = active.id as string;
     const overTaskId = over.id as string;
     
-    // Find the columns for the active and over items
     const activeColumn = Object.values(board.columns).find(column => 
       column.taskIds.includes(activeTaskId)
     );
@@ -145,14 +183,11 @@ export function Board() {
     
     if (!activeColumn || !overColumn) return;
     
-    // If task is dropped over another task
     if (overTaskId !== overColumn.id) {
-      // Find the indexes in the columns
       const activeIndex = activeColumn.taskIds.indexOf(activeTaskId);
       const overIndex = overColumn.taskIds.indexOf(overTaskId);
       
       if (activeColumn.id === overColumn.id) {
-        // Reordering within the same column
         moveTask(
           activeTaskId,
           activeColumn.id,
@@ -161,7 +196,6 @@ export function Board() {
           overIndex
         );
       } else {
-        // Moving to a different column
         moveTask(
           activeTaskId,
           activeColumn.id,
@@ -171,8 +205,6 @@ export function Board() {
         );
       }
     } else {
-      // Task is dropped directly over a column
-      // Add it to the end of that column
       const activeIndex = activeColumn.taskIds.indexOf(activeTaskId);
       
       moveTask(
@@ -226,13 +258,18 @@ export function Board() {
     }
   };
 
-  // Calculate progress statistics
   const totalTasks = Object.values(board.tasks).length;
   const completedTasks = Object.values(board.tasks).filter(task => task.status === 'done').length;
   const inProgressTasks = Object.values(board.tasks).filter(task => task.status === 'in-progress').length;
   const todoTasks = Object.values(board.tasks).filter(task => task.status === 'todo').length;
 
-  // Show loading state during SSR and initial client-side hydration
+  const clearFilters = () => {
+    setPriorityFilter('all');
+    setAssigneeFilter('all');
+    setSearchTerm('');
+    setIsFilterOpen(false);
+  };
+
   if (isLoading) {
     return (
       <div className="relative p-4 h-full flex flex-col overflow-hidden">
@@ -259,83 +296,285 @@ export function Board() {
 
   return (
     <>
-      <div className="relative p-4 flex flex-col bg-yellow-50 board-container">
+      <div className="relative p-4 flex flex-col board-container">
         <motion.div 
           className="relative z-10 flex justify-between items-center mb-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         >
-          <div>
+          <div className="relative">
+            {/* POW! effect behind title */}
+            <motion.div 
+              className="absolute -top-4 -left-8 text-7xl font-bold text-yellow-500 opacity-70 comic-font transform -rotate-12 z-0"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 0.7 }}
+              transition={{ delay: 0.5, duration: 0.3, type: 'spring' }}
+            >
+              <span className="text-stroke-black">POW!</span>
+            </motion.div>
+            
             <motion.h1 
-              className="comic-font text-4xl text-black tracking-wider"
+              className="comic-font text-5xl text-black tracking-wider uppercase transform -rotate-1 relative z-10"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1, type: 'spring' }}
+              style={{
+                textShadow: '3px 3px 0 #FFF, 6px 6px 0 rgba(0,0,0,0.2)'
+              }}
             >
               PROJECT BOARD
             </motion.h1>
-            <motion.p 
-              className="comic-text text-sm text-gray-700"
+            
+            <motion.div 
+              className="comic-text text-sm text-gray-700 ml-1 relative"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              Organize your tasks with drag and drop
-            </motion.p>
+              <p>Organize your tasks with drag and drop</p>
+              
+              {/* Action lines */}
+              <motion.div 
+                className="absolute -right-16 top-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+              >
+                <svg width="60" height="20" viewBox="0 0 60 20">
+                  <motion.path 
+                    d="M0,10 L60,10" 
+                    stroke="#000" 
+                    strokeWidth="1.5"
+                    strokeDasharray="6 4"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.8, delay: 0.8 }}
+                  />
+                  <motion.path 
+                    d="M0,5 L50,5" 
+                    stroke="#000" 
+                    strokeWidth="1.5"
+                    strokeDasharray="6 4"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.6, delay: 0.9 }}
+                  />
+                  <motion.path 
+                    d="M0,15 L40,15" 
+                    stroke="#000" 
+                    strokeWidth="1.5"
+                    strokeDasharray="6 4"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.4, delay: 1 }}
+                  />
+                </svg>
+              </motion.div>
+            </motion.div>
           </div>
           
-          <div className="flex space-x-2">
-            <motion.button
-              onClick={() => setIsHelpOpen(true)}
-              className="p-2 text-gray-700 hover:text-gray-900 focus:outline-none comic-text"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              whileTap={{ scale: 0.95 }}
-              title="Keyboard shortcuts"
-            >
-              <FiHelpCircle />
-            </motion.button>
-            
+          <div className="flex space-x-2 relative">
             <motion.button
               onClick={() => setIsColumnFormOpen(true)}
-              className="comic-button px-4 py-2 flex items-center space-x-1 text-sm bg-purple-400"
-              whileHover={{ scale: 1.05, rotate: -2 }}
-              whileTap={{ scale: 0.95 }}
+              className="comic-button px-4 py-2 flex items-center space-x-1 text-sm bg-purple-400 border-3 border-black transform rotate-1"
+              whileHover={{ scale: 1.05, rotate: -2, boxShadow: '5px 5px 0 rgba(0,0,0,0.5)' }}
+              whileTap={{ scale: 0.95, rotate: 0 }}
               style={{ filter: 'drop-shadow(3px 3px 0 rgba(0,0,0,0.2))' }}
               title="Add new column"
             >
               <FiColumns size={14} />
-              <span>Add Column</span>
+              <span className="font-bold">Add Column</span>
             </motion.button>
             
             <motion.button
-              className="comic-button px-4 py-2 flex items-center space-x-1 text-sm"
-              whileHover={{ scale: 1.05, rotate: -2 }}
-              whileTap={{ scale: 0.95 }}
+              className="comic-button px-4 py-2 flex items-center space-x-1 text-sm border-3 border-black bg-blue-300 transform -rotate-1"
+              whileHover={{ scale: 1.05, rotate: 2, boxShadow: '5px 5px 0 rgba(0,0,0,0.5)' }}
+              whileTap={{ scale: 0.95, rotate: 0 }}
               style={{ filter: 'drop-shadow(3px 3px 0 rgba(0,0,0,0.2))' }}
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
             >
-              <FiFilter size={14} />
-              <span>Filter</span>
+              <FiFilter size={14} className={priorityFilter !== 'all' || assigneeFilter !== 'all' ? 'text-blue-600' : ''} />
+              <span className="font-bold">Filter</span>
               <FiChevronDown size={14} />
             </motion.button>
             
+            <AnimatePresence>
+              {isFilterOpen && (
+                <motion.div 
+                  className="absolute right-0 top-12 mt-1 z-50 bg-white border-4 border-black shadow-comic rounded-md w-64 p-3 space-y-4 transform rotate-1"
+                  initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                  transition={{ duration: 0.15 }}
+                  style={{ boxShadow: '5px 5px 0 rgba(0,0,0,0.3)' }}
+                >
+                  {/* Priority filter */}
+                  <div>
+                    <div className="font-medium mb-2 text-sm comic-text uppercase">Priority</div>
+                    <div className="space-y-1">
+                      {['all', 'low', 'medium', 'high'].map((priority) => (
+                        <div 
+                          key={priority} 
+                          onClick={() => setPriorityFilter(priority as Task['priority'] | 'all')}
+                          className={`cursor-pointer px-2 py-1 rounded text-sm flex items-center comic-text ${priorityFilter === priority ? 'bg-blue-100 text-blue-800 font-bold border border-blue-400' : 'hover:bg-gray-100'}`}
+                        >
+                          {priority === 'high' && (
+                            <span className="w-3 h-3 bg-red-500 rounded-full mr-2 border border-black"></span>
+                          )}
+                          {priority === 'medium' && (
+                            <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2 border border-black"></span>
+                          )}
+                          {priority === 'low' && (
+                            <span className="w-3 h-3 bg-green-500 rounded-full mr-2 border border-black"></span>
+                          )}
+                          {priority === 'all' && (
+                            <span className="w-3 h-3 bg-gray-300 rounded-full mr-2 border border-black"></span>
+                          )}
+                          {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Assignee filter */}
+                  <div>
+                    <div className="font-medium mb-2 text-sm comic-text uppercase">Assignee</div>
+                    <div className="space-y-1 max-h-36 overflow-y-auto">
+                      <div 
+                        onClick={() => setAssigneeFilter('all')}
+                        className={`cursor-pointer px-2 py-1 rounded text-sm comic-text ${assigneeFilter === 'all' ? 'bg-blue-100 text-blue-800 font-bold border border-blue-400' : 'hover:bg-gray-100'}`}
+                      >
+                        All Assignees
+                      </div>
+                      {uniqueAssignees.map((assignee) => (
+                        <div 
+                          key={assignee} 
+                          onClick={() => setAssigneeFilter(assignee)}
+                          className={`cursor-pointer px-2 py-1 rounded text-sm comic-text ${assigneeFilter === assignee ? 'bg-blue-100 text-blue-800 font-bold border border-blue-400' : 'hover:bg-gray-100'}`}
+                        >
+                          {assignee}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Filter controls */}
+                  <div className="pt-2 border-t-2 border-dashed border-black flex justify-between">
+                    <button 
+                      onClick={clearFilters}
+                      className="text-xs text-gray-600 hover:text-gray-900 comic-text font-bold"
+                    >
+                      Clear filters
+                    </button>
+                    <button
+                      onClick={() => setIsFilterOpen(false)}
+                      className="text-xs bg-blue-500 text-white px-2 py-1 rounded border-2 border-black hover:bg-blue-600 comic-text font-bold transform rotate-1"
+                      style={{ boxShadow: '2px 2px 0 rgba(0,0,0,0.3)' }}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
             <motion.button
               onClick={() => handleAddTask()}
-              className="comic-button px-4 py-2 flex items-center space-x-1 text-sm bg-red-400"
-              whileHover={{ scale: 1.05, rotate: 2 }}
-              whileTap={{ scale: 0.95 }}
+              className="comic-button px-4 py-2 flex items-center space-x-1 text-sm bg-red-400 border-3 border-black transform rotate-1 relative"
+              whileHover={{ scale: 1.05, rotate: 3, boxShadow: '5px 5px 0 rgba(0,0,0,0.5)' }}
+              whileTap={{ scale: 0.95, rotate: 0 }}
               style={{ filter: 'drop-shadow(3px 3px 0 rgba(0,0,0,0.2))' }}
             >
               <FiPlus size={14} />
-              <span>Add Task</span>
+              <span className="font-bold">Add Task</span>
+              
+              {/* ZAP effect */}
+              <motion.div 
+                className="absolute -top-3 -right-7 text-xs font-bold text-yellow-400"
+                initial={{ opacity: 0, rotate: 15 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <svg width="30" height="30" viewBox="0 0 30 30">
+                  <path 
+                    d="M15,0 L18,12 L30,15 L18,18 L15,30 L12,18 L0,15 L12,12 Z" 
+                    fill="#FFFF00" 
+                    stroke="#000" 
+                    strokeWidth="1"
+                  />
+                </svg>
+              </motion.div>
             </motion.button>
           </div>
         </motion.div>
         
         <div className="flex-1 py-2">
           <div className="flex h-full gap-4">
-            {/* Task columns */}
             <div className="flex-1">
+              {/* Show active filters */}
+              {(priorityFilter !== 'all' || assigneeFilter !== 'all' || searchTerm.trim() !== '') && (
+                <motion.div 
+                  className="flex flex-wrap items-center gap-2 mb-5 px-4 py-2 mx-2 bg-white border-3 border-black rounded-md comic-speech-bubble"
+                  initial={{ y: -10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  style={{ boxShadow: '3px 3px 0 rgba(0,0,0,0.2)' }}
+                >
+                  <span className="text-sm font-bold text-gray-800 comic-text uppercase">Active filters:</span>
+                  
+                  {priorityFilter !== 'all' && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 border-2 border-black rounded text-xs comic-text transform -rotate-1">
+                      <span className="font-bold">Priority:</span> 
+                      <span className="flex items-center">
+                        {priorityFilter === 'high' && <span className="w-2 h-2 bg-red-500 rounded-full mr-1 border border-black"></span>}
+                        {priorityFilter === 'medium' && <span className="w-2 h-2 bg-yellow-500 rounded-full mr-1 border border-black"></span>}
+                        {priorityFilter === 'low' && <span className="w-2 h-2 bg-green-500 rounded-full mr-1 border border-black"></span>}
+                        {priorityFilter.charAt(0).toUpperCase() + priorityFilter.slice(1)}
+                      </span>
+                      <button 
+                        onClick={() => setPriorityFilter('all')}
+                        className="ml-1 text-gray-500 hover:text-gray-700"
+                      >
+                        <FiX size={12} />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {assigneeFilter !== 'all' && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-green-100 border-2 border-black rounded text-xs comic-text transform rotate-1">
+                      <span className="font-bold">Assignee:</span> {assigneeFilter}
+                      <button 
+                        onClick={() => setAssigneeFilter('all')}
+                        className="ml-1 text-gray-500 hover:text-gray-700"
+                      >
+                        <FiX size={12} />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {searchTerm.trim() !== '' && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 border-2 border-black rounded text-xs comic-text transform -rotate-1">
+                      <FiSearch size={10} className="mr-1" />
+                      <span className="font-bold">Search:</span> {searchTerm}
+                      <button 
+                        onClick={() => setSearchTerm('')}
+                        className="ml-1 text-gray-500 hover:text-gray-700"
+                      >
+                        <FiX size={12} />
+                      </button>
+                    </div>
+                  )}
+                  
+                  <button 
+                    onClick={clearFilters}
+                    className="text-xs bg-red-100 text-red-600 hover:text-red-800 comic-text border-2 border-black px-2 py-1 rounded font-bold transform rotate-1"
+                    style={{ boxShadow: '2px 2px 0 rgba(0,0,0,0.1)' }}
+                  >
+                    Clear all!
+                  </button>
+                </motion.div>
+              )}
+              
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -353,11 +592,14 @@ export function Board() {
                             key={columnId}
                             id={columnId}
                             title={column.title}
-                            tasks={column.taskIds.map(taskId => board.tasks[taskId])}
+                            tasks={getFilteredTasks(columnId).map(taskId => board.tasks[taskId])}
                             onTaskEdit={handleEditTask}
                             onTaskDelete={deleteTask}
                             onAddTask={() => handleAddTask(columnId as Task['status'])}
-                            onColumnDelete={handleDeleteColumn}
+                            onColumnDelete={() => {
+                              setDeletingColumnId(columnId);
+                              setIsDeleteColumnConfirmOpen(true);
+                            }}
                             availableColumns={board.columns}
                           />
                         );
@@ -371,7 +613,7 @@ export function Board() {
                     <div 
                       className="w-72 transform rotate-3 z-50"
                       style={{ 
-                        filter: 'drop-shadow(1px 1px 0 rgba(0,0,0,0.1))'
+                        filter: 'drop-shadow(3px 3px 0 rgba(0,0,0,0.3))'
                       }}
                     >
                       <TaskCard 
@@ -379,6 +621,17 @@ export function Board() {
                         onEdit={() => {}} 
                         onDelete={() => {}} 
                       />
+                      
+                      {/* ZOOM effect when dragging */}
+                      <motion.div 
+                        className="absolute -top-10 -left-5 text-3xl font-bold text-yellow-500 comic-font transform -rotate-12 z-50"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <span className="text-stroke-black">ZOOM!</span>
+                      </motion.div>
                     </div>
                   ) : null}
                 </DragOverlay>
@@ -388,7 +641,6 @@ export function Board() {
         </div>
       </div>
       
-      {/* Column Add Form */}
       <AnimatePresence>
         {isColumnFormOpen && (
           <motion.div 
@@ -399,20 +651,32 @@ export function Board() {
             onClick={() => setIsColumnFormOpen(false)}
           >
             <motion.div 
-              className="bg-white rounded-lg border-3 border-black hand-drawn-border w-full max-w-md shadow-comic relative"
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              className="bg-white rounded-lg border-4 border-black hand-drawn-border w-full max-w-md shadow-comic relative transform rotate-1"
+              initial={{ scale: 0.9, y: 20, opacity: 0, rotate: -3 }}
+              animate={{ scale: 1, y: 0, opacity: 1, rotate: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0, rotate: 3 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
+              style={{ boxShadow: '8px 8px 0 rgba(0,0,0,0.3)' }}
             >
-              <div className="flex justify-between items-center p-5 border-b-3 border-black bg-gradient-to-r from-purple-500 to-indigo-500 text-white comic-font">
+              {/* KAPOW! effect */}
+              <motion.div 
+                className="absolute -top-20 -left-20 text-7xl font-bold text-yellow-500 comic-font transform -rotate-12 z-10"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <span className="text-stroke-black">KAPOW!</span>
+              </motion.div>
+            
+              <div className="flex justify-between items-center p-5 border-b-4 border-black bg-gradient-to-r from-purple-500 to-indigo-500 text-white comic-font">
                 <h2 className="text-xl uppercase tracking-wide">
                   Add New Column
                 </h2>
                 <motion.button
                   onClick={() => setIsColumnFormOpen(false)}
-                  className="bg-white text-gray-800 hover:bg-red-100 hover:text-red-500 transition-colors p-1 rounded-full border-2 border-black"
+                  className="bg-white text-gray-800 hover:bg-red-100 hover:text-red-500 transition-colors p-1 rounded-full border-3 border-black"
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -422,7 +686,7 @@ export function Board() {
               
               <div className="p-5">
                 <div className="mb-5">
-                  <label htmlFor="columnTitle" className="block comic-text font-bold text-gray-700 mb-2">
+                  <label htmlFor="columnTitle" className="block comic-text font-bold text-gray-700 mb-2 uppercase">
                     Column Title
                   </label>
                   <input
@@ -439,8 +703,8 @@ export function Board() {
                   <motion.button
                     type="button"
                     onClick={() => setIsColumnFormOpen(false)}
-                    className="px-4 py-2 border-3 border-black bg-white hover:bg-gray-100 rounded-md shadow-comic-sm comic-font"
-                    whileHover={{ scale: 1.03, rotate: -1 }}
+                    className="px-4 py-2 border-3 border-black bg-white hover:bg-gray-100 rounded-md shadow-comic-sm comic-font transform -rotate-1"
+                    whileHover={{ scale: 1.03, rotate: 1, boxShadow: '4px 4px 0 rgba(0,0,0,0.3)' }}
                     whileTap={{ scale: 0.97 }}
                   >
                     CANCEL
@@ -449,8 +713,8 @@ export function Board() {
                   <motion.button
                     type="button"
                     onClick={handleAddColumn}
-                    className="px-4 py-2 border-3 border-black bg-purple-500 text-white hover:bg-purple-600 rounded-md shadow-comic comic-font flex items-center"
-                    whileHover={{ scale: 1.03, rotate: 1 }}
+                    className="px-4 py-2 border-3 border-black bg-purple-500 text-white hover:bg-purple-600 rounded-md shadow-comic comic-font flex items-center transform rotate-1"
+                    whileHover={{ scale: 1.03, rotate: -1, boxShadow: '4px 4px 0 rgba(0,0,0,0.3)' }}
                     whileTap={{ scale: 0.97 }}
                   >
                     <FiPlus className="mr-2" />
@@ -463,7 +727,6 @@ export function Board() {
         )}
       </AnimatePresence>
       
-      {/* Task Form */}
       <AnimatePresence>
         {isTaskFormOpen && (
           <TaskForm
@@ -503,20 +766,6 @@ export function Board() {
               }
               setIsTaskFormOpen(false);
             }}
-          />
-        )}
-      </AnimatePresence>
-      
-      <KeyboardShortcuts 
-        onAddTask={() => handleAddTask()} 
-        onShowHelp={() => setIsHelpOpen(true)}
-      />
-      
-      <AnimatePresence>
-        {isHelpOpen && (
-          <KeyboardShortcutsHelp 
-            isOpen={isHelpOpen} 
-            onClose={() => setIsHelpOpen(false)} 
           />
         )}
       </AnimatePresence>

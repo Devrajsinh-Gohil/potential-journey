@@ -288,201 +288,156 @@ export function TaskCard({ task, onEdit, onDelete, index = 0 }: TaskCardProps) {
 
   return (
     <motion.div
-      ref={(node) => {
-        // Set both refs
-        setNodeRef(node);
-        cardRef.current = node;
-      }}
+      ref={setNodeRef}
+      className={`bg-white border-2 border-black rounded-lg shadow-comic mb-3 ${getStatusStyles()} relative overflow-hidden`}
       style={{
         ...style,
-        filter: isDragging ? 'drop-shadow(2px 2px 0 rgba(0,0,0,0.2))' : 'drop-shadow(1px 1px 0 rgba(0,0,0,0.1))',
-        willChange: 'transform, opacity'
+        transform: isDragging 
+          ? style.transform 
+          : `${style.transform} rotate(${Math.floor(Math.random() * 5) - 2}deg)`,
+        zIndex: isExpanded ? 10 : 'auto',
+        boxShadow: isExpanded 
+          ? '8px 8px 0 rgba(0,0,0,0.5)' 
+          : localTask.priority === 'high'
+            ? '6px 6px 0 rgba(239, 68, 68, 0.5)'
+            : localTask.priority === 'medium'
+              ? '5px 5px 0 rgba(234, 179, 8, 0.5)'
+              : '4px 4px 0 rgba(0,0,0,0.3)'
       }}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{
-        duration: 0.3,
-        ease: "easeOut"
+      variants={cardVariants}
+      animate="animate"
+      initial="initial"
+      exit="exit"
+      onClick={handleCardClick}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+      onMouseMove={handleMouseMove}
+      whileHover={{
+        scale: 1.05,
+        rotate: localTask.priority === 'high' 
+          ? [0, 2, -2, 2, 0] 
+          : localTask.priority === 'medium' 
+            ? [0, 1, -1, 0] 
+            : 0,
+        boxShadow: localTask.priority === 'high'
+          ? '8px 8px 0 rgba(239, 68, 68, 0.7)'
+          : localTask.priority === 'medium'
+            ? '7px 7px 0 rgba(234, 179, 8, 0.7)'
+            : '6px 6px 0 rgba(0,0,0,0.4)'
       }}
-      whileHover={!isDragging ? { 
-        scale: 1.05, 
-        y: -8,
-        boxShadow: "6px 6px 0px rgba(0,0,0,0.3)",
-        filter: 'drop-shadow(4px 4px 0 rgba(0,0,0,0.2))',
-        transition: { 
-          type: 'spring',
-          stiffness: 250,
-          damping: 14,
-          mass: 1,
-          velocity: 1
-        }
-      } : undefined}
-      whileTap={!isDragging ? { 
-        scale: 0.95, 
-        y: 2,
-        boxShadow: "2px 2px 0px rgba(0,0,0,0.2)",
-        transition: {
-          type: 'spring',
-          stiffness: 300,
-          damping: 20
-        }
-      } : undefined}
-      className={`mb-3 hand-drawn-border bg-white rounded-lg w-full p-3 comic-text transform animation-gpu ${
-        getStatusStyles()
-      } ${
-        isDragging ? 'opacity-50 cursor-grabbing z-50' : 'cursor-pointer'
-      }`}
+      drag={isDragging}
+      dragConstraints={{
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0
+      }}
       {...attributes}
       {...listeners}
-      onMouseEnter={() => {
-        setShowActions(true);
-        setIsHovering(true);
-        setShowSpeechBubble(true);
-      }}
-      onMouseLeave={() => {
-        setShowActions(false);
-        setIsHovering(false);
-        setShowSpeechBubble(false);
-      }}
-      onMouseMove={handleMouseMove}
-      onClick={handleCardClick}
     >
-      {/* Task content */}
-      <div className="relative">
-        {/* POW effect when clicked */}
-        <AnimatePresence>
-          {showPow && (
-            <motion.div 
-              className="absolute -right-2 -top-10 z-50"
-              variants={powVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <div className="comic-pow px-4 py-2">
-                POW!
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Comic book edge/border effect */}
+      <div className="absolute inset-0 border-2 border-black rounded-lg pointer-events-none" 
+        style={{
+          boxShadow: 'inset 0 0 0 2px white',
+          zIndex: 1
+        }}
+      />
 
-        {/* Comic speech bubble - appears on hover */}
-        <AnimatePresence>
-          {showSpeechBubble && (
-            <motion.div 
-              className="absolute -right-1 -top-16 z-40"
-              variants={speechBubbleVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              style={{ pointerEvents: 'none' }}
-            >
-              <div className="comic-speech px-3 py-1 text-xs whitespace-nowrap">
-                {localTask.priority === 'high' ? 'Urgent!' : 
-                 localTask.priority === 'medium' ? 'Important' : 'Take your time'}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Priority indicator */}
-        <div className="flex justify-between items-start mb-2">
+      {/* POW effect on click */}
+      <AnimatePresence>
+        {showPow && (
           <motion.div 
-            className={`${priorityAnimation.className} inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-${getPriorityColor(localTask.priority)}-100 text-${getPriorityColor(localTask.priority)}-800 border border-${getPriorityColor(localTask.priority)}-300`}
-            whileHover={{
-              scale: 1.15,
-              y: -4,
-              boxShadow: `0 0 12px ${getPriorityGlowColor(localTask.priority).main}`,
-              transition: {
-                type: 'spring',
-                stiffness: 400,
-                damping: 10
-              }
-            }}
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ 
-              scale: 1, 
-              opacity: 1,
-              transition: {
-                type: 'spring', 
-                stiffness: 300, 
-                damping: 15
-              }
-            }}
+            className="absolute z-50 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1.4, rotate: 15 }}
+            exit={{ scale: 0, rotate: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           >
-            <span className="mr-1">{getPriorityIcon(localTask.priority)}</span>
-            <span className="capitalize">{localTask.priority}</span>
+            <div className="relative">
+              <svg width="80" height="80" viewBox="0 0 100 100">
+                <path 
+                  d="M50,0 L61,35 L97,35 L68,57 L79,91 L50,70 L21,91 L32,57 L3,35 L39,35 Z" 
+                  fill={
+                    localTask.priority === 'high' ? '#ef4444' : 
+                    localTask.priority === 'medium' ? '#f59e0b' : 
+                    '#10b981'
+                  } 
+                  stroke="black" 
+                  strokeWidth="3"
+                />
+              </svg>
+              <div 
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-3xl comic-font font-bold text-white text-stroke-black"
+                style={{textShadow: '2px 2px 0 black'}}>
+                {localTask.priority === 'high' ? 'POW!' : localTask.priority === 'medium' ? 'ZAP!' : 'POP!'}
+              </div>
+            </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="p-4 relative z-10">
+        <div className="flex justify-between mb-2">
+          <div className="flex items-center">
+            <motion.span 
+              className={`inline-flex items-center justify-center px-2 py-1 text-xs font-bold rounded-full ${getPriorityStyle(localTask.priority).bg} ${getPriorityStyle(localTask.priority).text} border-2 border-black mr-2`}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              animate={{ 
+                y: localTask.priority === 'high' ? [0, -2, 0] : 0
+              }}
+              transition={{ 
+                repeat: localTask.priority === 'high' ? Infinity : 0, 
+                duration: 0.5
+              }}
+            >
+              {getPriorityIcon(localTask.priority)} {localTask.priority.charAt(0).toUpperCase() + localTask.priority.slice(1)}
+            </motion.span>
+            
+            {localTask.dueDate && (
+              <motion.span 
+                className={`inline-flex items-center text-xs font-bold ${
+                  getDateStatusClass() === 'red' ? 'text-red-600 bg-red-50' : 
+                  getDateStatusClass() === 'yellow' ? 'text-yellow-600 bg-yellow-50' : 
+                  'text-blue-600 bg-blue-50'
+                } px-2 py-1 rounded-full border-2 border-black`}
+                whileHover={{ scale: 1.1 }}
+              >
+                <FiCalendar className="mr-1" size={12} />
+                {format(new Date(localTask.dueDate), 'MMM d')}
+              </motion.span>
+            )}
+          </div>
           
-          {/* Task actions (edit, delete) */}
           <AnimatePresence>
-            {showActions && (
-              <motion.div 
-                className="flex space-x-1"
-                initial={{ opacity: 0, x: 20 }}
+            {isHovering && (
+              <motion.div
+                className="flex items-center space-x-2"
+                initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
                 transition={{ duration: 0.2 }}
               >
                 <motion.button
-                  className="p-1 text-gray-500 hover:text-blue-500 bg-white border border-gray-200 rounded-md hover:bg-blue-50"
                   onClick={(e) => {
                     e.stopPropagation();
                     onEdit(localTask);
                   }}
-                  whileHover={{ 
-                    scale: 1.2, 
-                    boxShadow: "2px 2px 0px rgba(0,0,0,0.2)",
-                    backgroundColor: "#e6f2ff",
-                    y: -2,
-                    transition: {
-                      type: 'spring',
-                      stiffness: 500,
-                      damping: 10
-                    }
-                  }}
-                  whileTap={{ 
-                    scale: 0.8,
-                    y: 2,
-                    transition: {
-                      type: 'spring',
-                      stiffness: 300,
-                      damping: 15
-                    }
-                  }}
-                  title="Edit task"
+                  className="p-1.5 text-gray-800 hover:text-blue-500 bg-white border-2 border-black rounded-full shadow-comic-sm"
+                  whileHover={{ scale: 1.2, rotate: 15, boxShadow: '2px 2px 0 rgba(0,0,0,0.6)' }}
+                  whileTap={{ scale: 0.9 }}
                 >
                   <FiEdit size={14} />
                 </motion.button>
                 
                 <motion.button
-                  className="p-1 text-gray-500 hover:text-red-500 bg-white border border-gray-200 rounded-md hover:bg-red-50"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(localTask.id);
                   }}
-                  whileHover={{ 
-                    scale: 1.2, 
-                    boxShadow: "2px 2px 0px rgba(0,0,0,0.2)",
-                    backgroundColor: "#ffe6e6",
-                    y: -2,
-                    transition: {
-                      type: 'spring',
-                      stiffness: 500,
-                      damping: 10
-                    }
-                  }}
-                  whileTap={{ 
-                    scale: 0.8,
-                    y: 2,
-                    transition: {
-                      type: 'spring',
-                      stiffness: 300,
-                      damping: 15
-                    }
-                  }}
-                  title="Delete task"
+                  className="p-1.5 text-gray-800 hover:text-red-500 bg-white border-2 border-black rounded-full shadow-comic-sm"
+                  whileHover={{ scale: 1.2, rotate: -15, boxShadow: '2px 2px 0 rgba(0,0,0,0.6)' }}
+                  whileTap={{ scale: 0.9 }}
                 >
                   <FiTrash size={14} />
                 </motion.button>
@@ -491,157 +446,135 @@ export function TaskCard({ task, onEdit, onDelete, index = 0 }: TaskCardProps) {
           </AnimatePresence>
         </div>
         
-        {/* Task title with decorative elements */}
-        <div className="relative">
-          <h3 className="font-bold text-gray-800 leading-snug mb-1 pr-6 relative">
-            {localTask.title}
-            {localTask.priority === 'high' && (
-              <motion.div 
-                className="absolute -right-2 -top-2"
-                style={{ willChange: 'transform' }}
-                variants={starVariants}
-                animate="animate"
-              >
-                <span className="text-red-500 text-lg">★</span>
-              </motion.div>
-            )}
-          </h3>
-          
-          {/* Squiggly underline for emphasis */}
-          <svg className="absolute -bottom-1 left-0 w-full" height="5" viewBox="0 0 100 5" preserveAspectRatio="none">
-            <motion.path 
-              d="M0,1 Q10,0 20,1 T40,1 T60,1 T80,1 T100,1"
-              strokeWidth="2"
-              stroke={`${getPriorityDotColor(localTask.priority)}40`}
-              fill="none"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-            />
-          </svg>
-        </div>
-      
-        {/* Task description - abbreviated when collapsed */}
-        <div className="mt-2">
-          <p className="text-gray-600 text-sm">
-            {isExpanded 
-              ? localTask.description
-              : `${localTask.description.slice(0, 80)}${localTask.description.length > 80 ? '...' : ''}`
-            }
-          </p>
-        </div>
+        <h3 className={`text-base font-bold mb-1 comic-text uppercase ${localTask.priority === 'high' ? 'text-red-800' : ''}`} style={{
+          textShadow: localTask.priority === 'high' ? '1px 1px 0 rgba(239, 68, 68, 0.3)' : 'none'
+        }}>
+          {localTask.title}
+        </h3>
         
-        {/* Task metadata - shown when expanded */}
         <AnimatePresence>
           {isExpanded && (
-            <motion.div
+            <motion.div 
+              className="mt-3"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ 
-                duration: 0.25,
-                ease: "easeInOut"
-              }}
-              className="mt-3 pt-3 border-t border-dashed border-gray-200"
+              transition={{ duration: 0.3 }}
             >
-              <div className="flex flex-col space-y-2">
-                {/* Due date indicator */}
-                {localTask.dueDate && (
-                  <div className="flex items-center mt-3 text-sm">
-                    <FiCalendar className="mr-2 text-gray-500" />
-                    <span>{format(new Date(localTask.dueDate), 'MMM d, yyyy')}</span>
-                    <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                      {getDaysText()}
-                    </span>
-                  </div>
-                )}
+              <div className="border-t-2 border-dashed border-gray-300 pt-2 mb-2">
+                <div className="text-sm text-gray-600 mb-3 comic-text">{localTask.description || "No description provided."}</div>
                 
-                {/* Created/Updated timestamps */}
-                <div className="flex justify-between text-xs text-gray-500">
-                  <div className="flex items-center">
-                    <FiClock className="mr-1" size={12} />
-                    <span>Created {format(new Date(localTask.createdAt), 'MMM d')}</span>
-                  </div>
-                  {localTask.updatedAt !== localTask.createdAt && (
-                    <div className="flex items-center">
-                      <FiClock className="mr-1" size={12} />
-                      <span>Updated {format(new Date(localTask.updatedAt), 'MMM d')}</span>
+                <div className="flex flex-wrap gap-2">
+                  {localTask.assignee && (
+                    <motion.div 
+                      className="flex items-center text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-full border-2 border-black"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <FiUser className="mr-1" size={12} />
+                      {localTask.assignee}
+                    </motion.div>
+                  )}
+                  
+                  {localTask.dueDate && (
+                    <div className="text-xs font-bold text-gray-700">
+                      <span className="font-medium comic-text">{getDaysText()}</span>
                     </div>
                   )}
                 </div>
-
-                {/* Priority label */}
-                <div className="flex items-center">
-                  <FiFlag className="mr-1 text-gray-500" size={14} />
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${
-                    getPriorityStyle(localTask.priority).bg
-                  } ${getPriorityStyle(localTask.priority).text}`}>
-                    {localTask.priority.charAt(0).toUpperCase() + localTask.priority.slice(1)}
-                  </span>
-                </div>
-                
-                {/* Assignee display */}
-                {localTask.assignee && (
-                  <div className="flex items-center mt-3 text-sm">
-                    <FiUser className="mr-2 text-gray-500" />
-                    <span>Assigned to: </span>
-                    <span className="ml-2 px-2 py-0.5 bg-gray-100 rounded-full text-gray-800 font-medium">
-                      {localTask.assignee}
-                    </span>
-                  </div>
-                )}
               </div>
+              
+              <motion.div 
+                className="text-xs text-gray-400 mt-2 font-bold italic"
+                animate={{ y: [0, -1, 0] }}
+                transition={{ repeat: Infinity, duration: 1 }}
+              >
+                Click to collapse
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
         
-        {/* Task expand/collapse chevron */}
-        <div className="mt-2 flex justify-center">
-          <motion.button 
-            className="text-gray-400 hover:text-gray-600 focus:outline-none"
-            animate={{ 
-              rotate: isExpanded ? 180 : 0,
-              transition: {
-                type: 'spring',
-                stiffness: 300,
-                damping: 15
-              }
-            }}
-            whileHover={{
-              scale: 1.3,
-              color: "#3b82f6",
-              transition: {
-                type: 'spring',
-                stiffness: 500,
-                damping: 10
-              }
-            }}
-            whileTap={{
-              scale: 0.9,
-              transition: {
-                type: 'spring',
-                stiffness: 400,
-                damping: 15
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent triggering the card click
-              setIsExpanded(!isExpanded);
-            }}
-          >
-            <FiChevronDown size={16} />
-          </motion.button>
-        </div>
+        {!isExpanded && (
+          <div className="flex items-center mt-2 justify-between">
+            {localTask.assignee && (
+              <motion.div 
+                className="flex items-center text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-full border-2 border-black"
+                whileHover={{ scale: 1.05 }}
+              >
+                <FiUser className="mr-1" size={12} />
+                {localTask.assignee}
+              </motion.div>
+            )}
+            
+            <motion.div
+              animate={{ 
+                y: [0, -2, 0],
+                x: [0, 1, 0, -1, 0]
+              }}
+              transition={{ 
+                duration: 1.5, 
+                repeat: Infinity, 
+                repeatDelay: 2
+              }}
+              className="text-xs text-gray-500 font-bold italic"
+            >
+              Click for details!
+            </motion.div>
+          </div>
+        )}
       </div>
       
       {/* Visual embellishments - halftone pattern */}
       <div 
-        className="absolute top-0 right-0 w-16 h-16 opacity-5 pointer-events-none z-0" 
+        className="absolute top-0 right-0 w-24 h-24 opacity-15 pointer-events-none z-0 transform rotate-45" 
         style={{
-          backgroundImage: `radial-gradient(${getPriorityDotColor(localTask.priority)} 1px, transparent 1px)`,
-          backgroundSize: '5px 5px'
+          backgroundImage: `radial-gradient(${getPriorityDotColor(localTask.priority)} 1.5px, transparent 1.5px)`,
+          backgroundSize: '8px 8px'
         }}
       />
+
+      {/* Add action lines for all tasks, more intense for high priority */}
+      <motion.div 
+        className={`absolute bottom-0 right-0 w-full h-8 overflow-hidden pointer-events-none opacity-${
+          localTask.priority === 'high' ? '50' : 
+          localTask.priority === 'medium' ? '30' : '20'
+        }`}
+        animate={{ 
+          x: localTask.priority === 'high' 
+            ? [0, 8, 0, -8, 0] 
+            : localTask.priority === 'medium'
+              ? [0, 5, 0, -5, 0]
+              : [0, 3, 0, -3, 0]
+        }}
+        transition={{ 
+          repeat: Infinity, 
+          duration: localTask.priority === 'high' ? 1.5 : 2.5, 
+          ease: "easeInOut" 
+        }}
+      >
+        <svg width="100%" height="100%" viewBox="0 0 100 20">
+          <line 
+            x1="0" y1="5" x2="100" y2="5" 
+            stroke={
+              localTask.priority === 'high' ? '#ef4444' : 
+              localTask.priority === 'medium' ? '#f59e0b' : 
+              '#60a5fa'
+            } 
+            strokeWidth={localTask.priority === 'high' ? 2 : 1.5} 
+            strokeDasharray="5,3" 
+          />
+          <line 
+            x1="0" y1="15" x2="100" y2="15" 
+            stroke={
+              localTask.priority === 'high' ? '#ef4444' : 
+              localTask.priority === 'medium' ? '#f59e0b' : 
+              '#60a5fa'
+            } 
+            strokeWidth={localTask.priority === 'high' ? 2 : 1.5} 
+            strokeDasharray="5,3" 
+          />
+        </svg>
+      </motion.div>
     </motion.div>
   );
 } 
