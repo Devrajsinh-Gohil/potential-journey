@@ -266,7 +266,7 @@ export const useBoard = () => {
       }
 
       // Create a new tasks object
-      let newTasks = { ...prevBoard.tasks };
+      const newTasks = { ...prevBoard.tasks };
       
       // If a target column is specified, move tasks to that column
       if (targetColumnId && prevBoard.columns[targetColumnId]) {
