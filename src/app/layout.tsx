@@ -4,6 +4,7 @@ import './globals.css';
 import { ReactNode } from 'react';
 import { ToastProvider } from './components/ui/Toast';
 import { usePathname } from 'next/navigation';
+import { Analytics } from "@vercel/analytics/react"
 
 interface RootLayoutProps {
   children: ReactNode;
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bangers&family=Comic+Neue:wght@400;700&family=Permanent+Marker&family=Cabin+Sketch:wght@400;700&family=Architects+Daughter&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen bg-fixed comic-paper-yellow">
+        <Analytics />
         <ToastProvider>
           <div className="relative z-10 min-h-screen">
             {children}
